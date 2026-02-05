@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         statsCard.innerHTML = "<p style='text-align: center; grid-column: 1/-1;'>Loading...</p>";
 
-        const proxyUrl = 'https://corsproxy.io/?';
+        const proxyUrl = "https://api.allorigins.win/raw?url=";
         const targetUrl = 'https://leetcode.com/graphql/';
 
         const myHeaders = new Headers();
