@@ -1,186 +1,87 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", () => {
     const searchButton = document.getElementById("search-btn");
     const usernameInput = document.getElementById("user-input");
-    const statsContainer = document.querySelector(".stats-container");
+    const statsCard = document.querySelector(".stats-card");
+
     const easyLabel = document.getElementById("easy-label");
     const mediumLabel = document.getElementById("medium-label");
     const hardLabel = document.getElementById("hard-label");
-    const statsCard = document.querySelector(".stats-card");
+
     const easyCircle = document.querySelector(".easy-progress");
     const mediumCircle = document.querySelector(".medium-progress");
     const hardCircle = document.querySelector(".hard-progress");
-    const progressSection = document.querySelector(".progress");
-
-    // Initialize - clear labels but keep circles visible
-    function initializeView() {
-        progressSection.style.display = "flex";
-        easyLabel.innerHTML = "";
-        mediumLabel.innerHTML = "";
-        hardLabel.innerHTML = "";
-        statsCard.innerHTML = "";
-        updateProgress(easyCircle, 0, 1);
-        updateProgress(mediumCircle, 0, 1);
-        updateProgress(hardCircle, 0, 1);
-    }
-
-    // Initialize on page load
-    initializeView();
-
-    function validateUsername(username) {
-        if(username.trim() === ""){
-            alert("Username should not be empty");
-            return false;
-        }
-        const regex = /^[a-zA-Z0-9_-]{1,15}$/;
-        const isMatching = regex.test(username);
-        if(!isMatching){
-            alert("Invalid Username");
-        }
-        return isMatching;
-    }
 
     function updateProgress(circle, solved, total) {
-        const percentage = total > 0 ? (solved / total) * 100 : 0;
+        const percentage = total ? (solved / total) * 100 : 0;
         const degrees = (percentage / 100) * 360;
-        circle.style.setProperty('--progress-degree', `${degrees}deg`);
+        circle.style.setProperty("--progress-degree", `${degrees}deg`);
     }
 
-    function displayUserData(data) {
-        const totalQuestions = data.data.allQuestionsCount;
-        const solvedStats = data.data.matchedUser.submitStats.acSubmissionNum;
-
-        // Find stats by difficulty
-        const easySolved = solvedStats.find(item => item.difficulty === "Easy")?.count || 0;
-        const mediumSolved = solvedStats.find(item => item.difficulty === "Medium")?.count || 0;
-        const hardSolved = solvedStats.find(item => item.difficulty === "Hard")?.count || 0;
-
-        const easyTotal = totalQuestions.find(item => item.difficulty === "Easy")?.count || 0;
-        const mediumTotal = totalQuestions.find(item => item.difficulty === "Medium")?.count || 0;
-        const hardTotal = totalQuestions.find(item => item.difficulty === "Hard")?.count || 0;
-
-        // Show progress section
-        progressSection.style.display = "flex";
-
-        // Update labels with numbers
-        easyLabel.innerHTML = `${easySolved}<br>${easyTotal}`;
-        mediumLabel.innerHTML = `${mediumSolved}<br>${mediumTotal}`;
-        hardLabel.innerHTML = `${hardSolved}<br>${hardTotal}`;
-
-        // Update progress circles
-        updateProgress(easyCircle, easySolved, easyTotal);
-        updateProgress(mediumCircle, mediumSolved, mediumTotal);
-        updateProgress(hardCircle, hardSolved, hardTotal);
-
-        // Update stats card
-        const totalSolved = easySolved + mediumSolved + hardSolved;
-        const totalProblems = easyTotal + mediumTotal + hardTotal;
-        
-        statsCard.innerHTML = `
-            <div class="card-item">
-                <h3>Total Solved</h3>
-                <p>${totalSolved} / ${totalProblems}</p>
-            </div>
-            <div class="card-item">
-                <h3>Easy</h3>
-                <p>${easySolved} / ${easyTotal}</p>
-            </div>
-            <div class="card-item">
-                <h3>Medium</h3>
-                <p>${mediumSolved} / ${mediumTotal}</p>
-            </div>
-            <div class="card-item">
-                <h3>Hard</h3>
-                <p>${hardSolved} / ${hardTotal}</p>
-            </div>
-        `;
+    function validateUsername(username) {
+        return /^[a-zA-Z0-9_-]{1,15}$/.test(username);
     }
 
-    async function fetchUserDetails(username){
-    try{
-        searchButton.textContent = "Searching...";
-        searchButton.disabled = true;
+    async function fetchUserDetails(username) {
+        try {
+            searchButton.disabled = true;
+            searchButton.textContent = "Searching...";
+            statsCard.innerHTML = "<p class='loading-text'>Loading...</p>";
 
-        statsCard.innerHTML = "<p style='text-align: center; grid-column: 1/-1;'>Loading...</p>";
+            const response = await fetch("/.netlify/functions/leetcode", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username })
+            });
 
-        const proxyUrl = "https://api.allorigins.win/raw?url=";
-        const targetUrl = 'https://leetcode.com/graphql/';
+            if (!response.ok) throw new Error("User not found");
 
-        const myHeaders = new Headers();
-        myHeaders.append("content-type", "application/json");
+            const data = await response.json();
 
-        const graphql = JSON.stringify({
-            query: `
-                query userSessionProgress($username: String!) {
-                    allQuestionsCount {
-                        difficulty
-                        count
-                    }
-                    matchedUser(username: $username) {
-                        submitStats {
-                            acSubmissionNum {
-                                difficulty
-                                count
-                                submissions
-                            }
-                        }
-                    }
-                }
-            `,
-            variables: { username }
-        });
+            const total = data.data.allQuestionsCount;
+            const solved = data.data.matchedUser.submitStats.acSubmissionNum;
 
-        const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body: graphql,
-        };
+            const get = (arr, d) => arr.find(x => x.difficulty === d)?.count || 0;
 
-        const response = await fetch(
-            proxyUrl + encodeURIComponent(targetUrl),
-            requestOptions
-        );
+            const easySolved = get(solved, "Easy");
+            const mediumSolved = get(solved, "Medium");
+            const hardSolved = get(solved, "Hard");
 
-        if(!response.ok){
-            throw new Error("Unable to fetch user details");
+            const easyTotal = get(total, "Easy");
+            const mediumTotal = get(total, "Medium");
+            const hardTotal = get(total, "Hard");
+
+            easyLabel.innerHTML = `${easySolved}<br>${easyTotal}`;
+            mediumLabel.innerHTML = `${mediumSolved}<br>${mediumTotal}`;
+            hardLabel.innerHTML = `${hardSolved}<br>${hardTotal}`;
+
+            updateProgress(easyCircle, easySolved, easyTotal);
+            updateProgress(mediumCircle, mediumSolved, mediumTotal);
+            updateProgress(hardCircle, hardSolved, hardTotal);
+
+            statsCard.innerHTML = `
+                <div class="card-item"><h3>Total Solved</h3><p>${easySolved + mediumSolved + hardSolved}</p></div>
+                <div class="card-item"><h3>Easy</h3><p>${easySolved}</p></div>
+                <div class="card-item"><h3>Medium</h3><p>${mediumSolved}</p></div>
+                <div class="card-item"><h3>Hard</h3><p>${hardSolved}</p></div>
+            `;
+        } catch (err) {
+            statsCard.innerHTML = `<p class="error-text">❌ ${err.message}</p>`;
+        } finally {
+            searchButton.disabled = false;
+            searchButton.textContent = "Search";
         }
+    }
 
-        const data = await response.json();
-
-        if(!data.data || !data.data.matchedUser){
-            throw new Error("User not found! Please check the username.");
+    searchButton.addEventListener("click", () => {
+        const username = usernameInput.value.trim();
+        if (!validateUsername(username)) {
+            alert("Invalid username");
+            return;
         }
-
-        displayUserData(data);
-    }
-    catch(error){
-        console.error("Error:", error);
-        initializeView();
-
-        statsCard.innerHTML = `
-            <p style="color: #ff6b6b; text-align: center; grid-column: 1/-1;">
-                ❌ ${error.message}
-            </p>
-        `;
-    }
-    finally{
-        searchButton.textContent = "Search";
-        searchButton.disabled = false;
-    }
-}
-
-
-    searchButton.addEventListener('click', function(){
-        const username = usernameInput.value;
-        console.log("Username: ", username);
-        if(validateUsername(username)){
-            fetchUserDetails(username);
-        }
+        fetchUserDetails(username);
     });
 
-    // Allow Enter key to search
-    usernameInput.addEventListener('keypress', function(e){
-        if(e.key === 'Enter'){
-            searchButton.click();
-        }
+    usernameInput.addEventListener("keypress", e => {
+        if (e.key === "Enter") searchButton.click();
     });
 });
