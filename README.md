@@ -1,4 +1,3 @@
-LeetMetric 🚀
 LeetMetric is a beautiful, modern web application that helps LeetCode users track their coding progress with elegant visualizations. Get instant insights into your problem-solving journey with a clean, responsive interface.
 
 https://via.placeholder.com/800x450/1a1a2e/ffffff?text=LeetMetric+Preview
@@ -73,3 +72,4 @@ Total problems solved
 
 
 Breakdown by difficulty (Easy/Medium/Hard)
+
