@@ -33,7 +33,7 @@ Icons: Emoji and CSS-based icons
 Clone the repository
 
 bash
-git clone https://github.com/your-username/leetmetric.git
+git clone https://github.com/iamchinmaya07/leetmetric.git
 cd leetmetric
 Open the project
 
@@ -70,5 +70,6 @@ Total problems solved
 
 
 Breakdown by difficulty (Easy/Medium/Hard)
+
 
 
